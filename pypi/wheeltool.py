@@ -185,7 +185,7 @@ class Wheel(object):
   def _parse_metadata(self, file_object):
     # the METADATA file is in PKG-INFO format, which is a sequence of RFC822 headers:
     # https://www.python.org/dev/peps/pep-0241/
-    msg = email.message_from_bytes(file_object.read())
+    msg = email.message_from_file(file_object)
 
     # Requires-Dist format:
     # https://packaging.python.org/specifications/core-metadata/#requires-dist-multiple-use
