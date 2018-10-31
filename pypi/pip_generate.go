@@ -277,12 +277,41 @@ func renameIfNotExists(oldPath string, newPath string) error {
 	if err == nil {
 		// file exists: do nothing
 		return nil
-	} else if !os.IsNotExist(err) {
+	}
+	if !os.IsNotExist(err) {
 		// stat error
 		return err
 	}
-	// rename the file
-	return os.Rename(oldPath, newPath)
+	// copy the file
+	in, err := os.Open(oldPath)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	oldPathStat, err := in.Stat()
+	if err != nil {
+		return err
+	}
+	perm := oldPathStat.Mode()
+	tmp, err := ioutil.TempFile(filepath.Dir(newPath), "")
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(tmp, in)
+	if err != nil {
+		tmp.Close()
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err = tmp.Close(); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	if err = os.Chmod(tmp.Name(), perm); err != nil {
+		os.Remove(tmp.Name())
+		return err
+	}
+	return os.Rename(tmp.Name(), newPath)
 }
 
 func main() {
